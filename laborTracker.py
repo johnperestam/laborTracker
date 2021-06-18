@@ -65,8 +65,8 @@ def reloadOrders():
   if hostname == "debian-server":
     process="burning"
 
-  url = "http://198.255.132.49/WIP/API/getOpenOrders.php?process="+process.lower()
-  #url = "http://198.255.132.49/WIP/API/getOpenOrders.php?process=all"
+  url = "ENDPOINT HERE"
+
   try:
     response = urllib2.urlopen(url)
     data = response.read()
