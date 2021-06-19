@@ -6,7 +6,7 @@ import time
 import re
 import subprocess
 import socket
-
+import websocket
 
 hostname= socket.gethostname()
 IPAddr = subprocess.Popen(["hostname", "-I"],stdout=subprocess.PIPE).communicate()[0].rstrip()
@@ -18,20 +18,22 @@ processList=["BURNING","SHEARING","SAWING","BRAKE","PUNCH","DRILL"]
 NC="\033[0;37;40m"
 BLINK="\033[6m"
 #foreground
-fGREEN="\033[0;32;40m"
 fRED="\033[0;31;40m"
-fPURPLE="\033[0;35;40m"
+fGREEN="\033[0;32;40m"
 fYELLOW="\033[0;33;40m"
-fCYAN="\033[0;36;40m"
 fBLUE="\033[0;34;40m"
+fPURPLE="\033[0;35;40m"
+fCYAN="\033[0;36;40m"
 fWHITE="\033[0;37;40m"
 #background
-bGREEN="\033[0;30;42m"  #green bg/black fg
-bRED="\033[0;37;41m"    #red bg / white fg
-bWHITE_BLACK="\033[0;30;47m"
-bWHITE_BLUE="\033[0;34;47m"
+bGREEN_BLACK="\033[0;30;42m"  #green bg/black fg
 bYELLOW_BLACK="\033[0;30;43m"
-bRED_BLACK="\033[0;30;41m"
+bPURPLE_BLACK="\033[0;30;45m"
+bRED_WHITE="\033[0;37;41m"    #red bg / white fg
+
+bWHITE_BLACK="\033[0;30;47m"
+bWHITE_RED="\033[0;31;47m"
+bWHITE_BLUE="\033[0;34;47m"
 
 
 class Order:
@@ -53,19 +55,19 @@ class Order:
       else:
         pass
     if "Running" in statusList:
-      return bGREEN
+      return bGREEN_BLACK
     elif "Stopped" in statusList:
-      return bRED
+      return bRED_WHITE
     else:
       return ""
 
 
 #---------------------------------------------- RELOAD ORDERS ----------------------------------------------------------
 def reloadOrders():
-  if hostname == "debian-server":
-    process="burning"
+  #if hostname == "debian-server":
+  #  process="burning"
 
-  url = "ENDPOINT HERE"
+  url = "http://198.255.132.49/WIP/API/getOpenOrders.php?process="+process.lower()
 
   try:
     response = urllib2.urlopen(url)
@@ -78,10 +80,10 @@ def reloadOrders():
       x["order_num"]=Order(x["order_num"],x["customer_name"],x["po"],x["sales_rep"],x["date_due"],x["lines"])
       orderList.append(x['order_num'])
 
-    #return orderList
-    return process,orderList
+    return orderList
+    #return process,orderList
   except:
-    print bRED+"--!!!-- THERE WAS AN ERROR LOADING ORDERS! --!!!--"+NC
+    print bRED_WHITE+"--!!!-- THERE WAS AN ERROR LOADING ORDERS! --!!!--"+NC
     time.sleep(3)
     orderSelect(False)
 
@@ -123,20 +125,27 @@ def updateDB(rowid,status,lineNum):
   url = "http://198.255.132.49/WIP/update_db.php"
 
   if status == "Running":
-    send_status = "resume_job"
+    data_status = "resume_job"
+    color = bGREEN_BLACK
   if status == "Stopped":
-    send_status = "stop_job"
+    data_status = "stop_job"
+    color = bRED_WHITE
   if status == "Complete":
-    send_status = "complete_job"
+    data_status = "complete_job"
+    color = bPURPLE_BLACK
 
   data = json.dumps({rowid:send_status})
   req = urllib2.Request(url,data,{"Content-Type": "application/json"})
 
   response = urllib2.urlopen(req)
   if response.getcode() == 200:
-    print bWHITE_BLUE+"OK - Line Number "+str(lineNum)+ " is now "+ status+"!!"+NC
+    ws = websocket.create_connection("ws://198.255.132.49:8000")
+    ws.send(str(rowid)+","+data_status)
+    ws.close()
+
+    print bWHITE_BLUE+"OK - Line Number "+str(lineNum)+ " is now "+ NC + color + status+"!!"+NC
   else:
-    print bRED+"--!!!-- THERE WAS AN ERROR UPDATING THE DATABASE! --!!!--"+NC
+    print bRED_WHITE+"--!!!-- THERE WAS AN ERROR UPDATING THE DATABASE! --!!!--"+NC
 
   time.sleep(2)
   orderSelect(True)
@@ -148,13 +157,13 @@ def statusSelect(order,lineDetail):
 
   os.system("clear")
   if lineDetail["process_status"] == "Not Started":
-    options=[fGREEN+"Start Line"+NC]
+    options=[bGREEN_BLACK+"Start Line"+NC]
     optClean=["Running"]
   elif lineDetail["process_status"] == "Running":
-    options=[fRED+"Stop Line"+NC,fPURPLE+"Complete Line"+NC]
+    options=[bRED_WHITE+"Stop Line"+NC,bPURPLE_BLACK+"Complete Line"+NC]
     optClean=["Stopped","Complete"]
   elif lineDetail["process_status"] == "Stopped":
-    options=[fGREEN+"Resume Line"+NC,fPURPLE+"Complete Line"+NC]
+    options=[bGREEN_BLACK+"Resume Line"+NC,bPURPLE_BLACK+"Complete Line"+NC]
     optClean=["Running","Complete"]
 
   line1=" "+order.customer_name+ " - " +str(order.order_num)+" "
@@ -214,7 +223,7 @@ def statusSelect(order,lineDetail):
   except IndexError:
     os.system("clear")
     selection=""
-    print bRED+"--!!!-- INVALID LINE CHOICE!! TRY AGAIN  --!!!--"+NC
+    print bRED_WHITE+"--!!!-- INVALID LINE CHOICE!! TRY AGAIN  --!!!--"+NC
     time.sleep(3)
     statusSelect(order,lineDetail)
   except KeyboardInterrupt:
@@ -224,7 +233,7 @@ def statusSelect(order,lineDetail):
     error = sys.exc_info()
     os.system("clear")
     print error
-    print bRED+"--!!!-- INVALID INPUT --!!!--                                                orderSelect"+NC
+    print bRED_WHITE+"--!!!-- INVALID INPUT --!!!--                                                orderSelect"+NC
     time.sleep(3)
     orderSelect(False)
 
@@ -253,10 +262,10 @@ def lineSelect(order):
         status=fCYAN+"Not Started "
       elif line["process_status"] == "Stopped":
         status="Stopped     "
-        lineBackgroundColor=bRED
+        lineBackgroundColor=bRED_WHITE
       elif line["process_status"]=="Running":
         status="Running     "
-        lineBackgroundColor=bGREEN
+        lineBackgroundColor=bGREEN_BLACK
 
       print lineBackgroundColor+" "+str(line["line_number"]).ljust(3)+"| "+str(line["quantity"]).ljust(6)+"| "+str(line["uom"]).ljust(4)+"| "+str(line["description"])[:27].ljust(27)+"| "+str(line["width"]).ljust(7)+"| "+str(line["length"]).ljust(8)+"| "+status+NC
 
@@ -336,7 +345,7 @@ def lineSelect(order):
     except IndexError:
       os.system("clear")
       selection=""
-      print bRED+"--!!!-- INVALID LINE CHOICE!! TRY AGAIN  --!!!--"+NC
+      print bRED_WHITE+"--!!!-- INVALID LINE CHOICE!! TRY AGAIN  --!!!--"+NC
       time.sleep(3)
       paintLineSelectScreen(ord,lines[0],currentPage)
     except KeyboardInterrupt:
@@ -346,7 +355,7 @@ def lineSelect(order):
       error = sys.exc_info()
       os.system("clear")
       print error
-      print bRED+"--!!!-- INVALID INPUT --!!!--                                                orderSelect"+NC
+      print bRED_WHITE+"--!!!-- INVALID INPUT --!!!--                                                orderSelect"+NC
       time.sleep(3)
       lineSelect(ord)
 
@@ -360,10 +369,10 @@ def orderSelect(reload=False):
   currentPage = 0
 
   if reload == True:
-    #orderList = reloadOrders()
-    reloadData = reloadOrders()
-    orderList = reloadData[1]
-    process = reloadData[0].upper()
+    orderList = reloadOrders()
+    #reloadData = reloadOrders()
+    #orderList = reloadData[1]
+    #process = reloadData[0].upper()
 
   pages = screenPages(lineCount,orderList)
 
@@ -427,7 +436,7 @@ def orderSelect(reload=False):
               elif selection[0] == "*":
 		currentPage=0
 		os.system("clear")
-                #processSelect()
+                processSelect()
 	      elif selection[0] == ".":
 		raise Exception("INVALID CHOICE")
 		paintOrderSelectScreen(pages,currentPage)
@@ -461,7 +470,7 @@ def orderSelect(reload=False):
     except IndexError:
       os.system("clear")
       selection=""
-      print bRED+"--!!!-- INVALID ORDER CHOICE!! TRY AGAIN  --!!!--"+NC
+      print bRED_WHITE+"--!!!-- INVALID ORDER CHOICE!! TRY AGAIN  --!!!--"+NC
       time.sleep(3)
       paintOrderSelectScreen(pages,currentPage)
     except KeyboardInterrupt:
@@ -471,7 +480,7 @@ def orderSelect(reload=False):
       error = sys.exc_info()
       os.system("clear")
       print error
-      print bRED+"--!!!-- INVALID INPUT --!!!--                                                orderSelect"+NC
+      print bRED_WHITE+"--!!!-- INVALID INPUT --!!!--                                                orderSelect"+NC
       time.sleep(3)
       orderSelect(False)
 
@@ -509,7 +518,7 @@ def processSelect():
   except IndexError:
     os.system("clear")
     process=""
-    print bRED+"--!!!-- INVALID PROCESS CHOICE!! TRY AGAIN --!!!--"+NC
+    print bRED_WHITE+"--!!!-- INVALID PROCESS CHOICE!! TRY AGAIN --!!!--"+NC
     time.sleep(3)
     os.system("clear")
     processSelect()
@@ -548,6 +557,6 @@ def splash():
 
 #----- START PROGRAM ------
 splash()
-orderSelect(True)
-#processSelect()
+#orderSelect(True)
+processSelect()
 
