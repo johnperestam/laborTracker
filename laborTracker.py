@@ -65,8 +65,13 @@ def reloadOrders():
   if hostname == "debian-server":
     process="burning"
 
+<<<<<<< HEAD
   url = "http://198.255.132.49/WIP/API/getOpenOrders.php?process="+process.lower()
   #url = "http://198.255.132.49/WIP/API/getOpenOrders.php?process=all"
+=======
+  url = "YOUR ENDPOINT HERE"
+
+>>>>>>> a44be51... added ability to send websocket data, removed sensitive URLs
   try:
     response = urllib2.urlopen(url)
     data = response.read()
@@ -120,7 +125,7 @@ def findIndex(lst, key, value):
 
 #------------------------------------------------------- UPDATE DATABASE -------------------------------------------------
 def updateDB(rowid,status,lineNum):
-  url = "http://198.255.132.49/WIP/update_db.php"
+  url = "DATABASE API ENDPOINT HERE"
 
   if status == "Running":
     send_status = "resume_job"
