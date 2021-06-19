@@ -67,7 +67,7 @@ def reloadOrders():
   #if hostname == "debian-server":
   #  process="burning"
 
-  url = "http://198.255.132.49/WIP/API/getOpenOrders.php?process="+process.lower()
+  url = "YOUR ENDPOINT HERE"
 
   try:
     response = urllib2.urlopen(url)
@@ -122,7 +122,7 @@ def findIndex(lst, key, value):
 
 #------------------------------------------------------- UPDATE DATABASE -------------------------------------------------
 def updateDB(rowid,status,lineNum):
-  url = "http://198.255.132.49/WIP/update_db.php"
+  url = "DATABASE API ENDPOINT HERE"
 
   if status == "Running":
     data_status = "resume_job"
