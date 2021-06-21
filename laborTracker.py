@@ -66,7 +66,6 @@ class Order:
 def reloadOrders():
   #if hostname == "debian-server":
   #  process="burning"
-
   url = "YOUR ENDPOINT HERE"
 
   try:
@@ -390,13 +389,15 @@ def orderSelect(reload=False):
     print """# | ORDER #|         CUSTOMER           |     PO      |  SALES REP  | DATE DUE  """
     print   "==|========|============================|=============|=============|==========="
 
-    for order in pageList[str(currentPage)]:
-      if listData[1] > 0 and currentPage > listData[0]:
-        orderIndex = (currentPage-1)*lineCount + pageList[str(currentPage)].index(order)
-      else:
-        orderIndex = currentPage*lineCount + pageList[str(currentPage)].index(order)
-        orderColor = order.getOrderColor()
-      print orderColor+str(orderIndex+1).ljust(2)+"| "+str(order.order_num).ljust(7)+"|"+order.customer_name[:28].ljust(28)+"|"+str(order.po)[:13].ljust(13)+"|"+str(order.sales_rep)[:13].ljust(13)+"| "+str(order.date_due).ljust(10)+NC
+    if len(pageList) > 0:
+      for order in pageList[str(currentPage)]:
+        if listData[1] > 0 and currentPage > listData[0]:
+          orderIndex = (currentPage-1)*lineCount + pageList[str(currentPage)].index(order)
+        else:
+          orderIndex = currentPage*lineCount + pageList[str(currentPage)].index(order)
+          orderColor = order.getOrderColor()
+        print orderColor+str(orderIndex+1).ljust(2)+"| "+str(order.order_num).ljust(7)+"|"+order.customer_name[:28].ljust(28)+"|"+str(order.po)[:13].ljust(13)+"|"+str(order.sales_rep)[:13].ljust(13)+"| "+str(order.date_due).ljust(10)+NC
+
     print "=".center(80,"=")
     print " "
     pageNum = " "+bWHITE_BLUE+"PAGE {}".format(currentPage+1)+NC+" "
