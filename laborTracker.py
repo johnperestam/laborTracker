@@ -134,7 +134,7 @@ def updateDB(rowid,status,lineNum):
     data_status = "complete_job"
     color = bPURPLE_BLACK
 
-  data = json.dumps({rowid:send_status})
+  data = json.dumps({rowid:data_status})
   req = urllib2.Request(url,data,{"Content-Type": "application/json"})
 
   response = urllib2.urlopen(req)
