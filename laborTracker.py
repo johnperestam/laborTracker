@@ -66,7 +66,8 @@ class Order:
 def reloadOrders():
   #if hostname == "debian-server":
   #  process="burning"
-  url = "YOUR ENDPOINT HERE"
+  url = "http://198.255.132.49/WIP/API/getOpenOrders.php?process="+process.lower()
+  #url = "YOUR ENDPOINT HERE"
 
   try:
     response = urllib2.urlopen(url)
@@ -112,16 +113,18 @@ def screenPages(linesPerPage,itemList):
 
 #------------------------------------------------------ FIND INDEX ---------------------------------------------------------
 def findIndex(lst, key, value):
-    for i, dic in enumerate(lst):
-        if dic[key] == value:
-            return i
-	else:
-          return -1
+  for i, dic in enumerate(lst):
+    if dic[key] == value:
+      return i
+    else:
+      continue
+      #return -1
 
 
 #------------------------------------------------------- UPDATE DATABASE -------------------------------------------------
 def updateDB(rowid,status,lineNum):
-  url = "DATABASE API ENDPOINT HERE"
+#  url = "DATABASE API ENDPOINT HERE"
+  url = "http://198.255.132.49/WIP/update_db.php"
 
   if status == "Running":
     data_status = "resume_job"
